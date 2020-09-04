@@ -8,14 +8,24 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-int main()
+struct mensagem {
+  int codigo;
+  int resposta;
+  long ip;
+  int port;
+};
+
+int main(argc, argv)
+     int argc;
+     char *argv[];
 {
+  struct mensagem msg;
 	int sock, length;
 	struct sockaddr_in name;
 	char buf[1024];
   int count = 0;
-
-        /* Cria o socket de comunicacao */
+  
+  /* Cria o socket de comunicacao */
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if(sock<0) {
 	/*
@@ -27,7 +37,7 @@ int main()
 	/* Associa */
 	name.sin_family = AF_INET;
 	name.sin_addr.s_addr = INADDR_ANY;
-	name.sin_port = 0;
+  name.sin_port = htons(2020);
 	if (bind(sock,(struct sockaddr *)&name, sizeof name ) < 0) {
 		perror("binding datagram socket");
 		exit(1);
@@ -42,15 +52,17 @@ int main()
 
 	/* Le */
   while(1) {
-    if (recvfrom(sock, &buf, 1024, 0, (struct sockaddr *)&name, &length))
+    if (recvfrom(sock, (char *)&msg, sizeof(msg), 0, (struct sockaddr *)&name, &length))
                   perror("receiving datagram packet");
-          printf("  %s\n", buf);
-          printf("family: %u\n", name.sin_family);
-          printf("port: %d\n", name.sin_port);
-          printf("addr: %d\n", name.sin_addr.s_addr);
-          printf("addr 2: %s\n", inet_ntoa(name.sin_addr));
+    printf("\n");
+    printf("family: %u\n", name.sin_family);
+    printf("port: %d\n", name.sin_port);
+    printf("addr: %d\n", name.sin_addr.s_addr);
+    printf("addr 2: %s\n", inet_ntoa(name.sin_addr));
     count++;
-    if (sendto (sock, (char *)&count, sizeof(count), 0, (struct sockaddr *)&name, sizeof name)<0)
+    msg.resposta=count;
+
+    if (sendto (sock, (char *)&msg, sizeof(struct mensagem), 0, (struct sockaddr *)&name, sizeof name)<0)
             perror("sending datagram message");
   }
 }
